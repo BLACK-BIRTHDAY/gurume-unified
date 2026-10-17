@@ -61,3 +61,8 @@ __all__ = [
     "get_genre_name_by_code",
     "query_restaurants",
 ]
+
+from .hotpepper import HotPepperClient
+from .unified import UnifiedSearchEngine
+
+__all__ += ["HotPepperClient", "UnifiedSearchEngine"]

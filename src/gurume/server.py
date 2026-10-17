@@ -5,6 +5,8 @@ delegating response schemas and helper logic to focused modules.
 """
 
 from __future__ import annotations
+from .hotpepper import HotPepperClient
+from .unified import UnifiedSearchEngine
 
 from typing import Annotated
 from typing import Literal
@@ -637,6 +639,215 @@ async def tabelog_get_keyword_suggestions(
 
     return _build_suggestion_list_error_output(normalized_query, error)
 
+
+
+# ============================================================================
+# Hot Pepper & Unified Search Tool Implementations
+# ============================================================================
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    )
+)
+async def hotpepper_search_restaurants(
+    keyword: Annotated[
+        str,
+        Field(
+            description=(
+                "Search keyword for Hot Pepper restaurants, e.g. cuisine name, dish name, area, or restaurant name "
+                "such as '大阪 焼肉' or '新宿 居酒屋'."
+            )
+        ),
+    ],
+    area: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Optional area name, prefecture, city, or station name to narrow down search."
+        ),
+    ] = None,
+    private_room: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for restaurants with private dining rooms (個室あり)."
+        ),
+    ] = False,
+    free_drink: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for restaurants offering all-you-can-drink plans (飲み放題あり)."
+        ),
+    ] = False,
+    free_food: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for restaurants offering all-you-can-eat plans (食べ放題あり)."
+        ),
+    ] = False,
+    non_smoking: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for non-smoking restaurants (禁煙席・全面禁煙あり)."
+        ),
+    ] = False,
+    parking: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for restaurants with parking facilities (駐車場あり)."
+        ),
+    ] = False,
+    page: Annotated[
+        int,
+        Field(
+            default=1,
+            ge=1,
+            description="1-based page number for pagination."
+        ),
+    ] = 1,
+    limit: Annotated[
+        int,
+        Field(
+            default=10,
+            ge=1,
+            le=50,
+            description="Maximum number of restaurants to return (1-50, default 10)."
+        ),
+    ] = 10,
+) -> dict:
+    """Search Japanese restaurants on Recruit Hot Pepper Gourmet API.
+
+    Best for: Finding restaurants with specific amenities (private rooms, nomihoudai, tabehoudai, non-smoking),
+    budget ranges, official coupons, and official shop photos.
+    """
+    client = HotPepperClient()
+    return await client.search(
+        keyword=keyword,
+        area=area,
+        free_drink=free_drink or None,
+        free_food=free_food or None,
+        private_room=private_room or None,
+        non_smoking=non_smoking or None,
+        parking=parking or None,
+        count=limit,
+        page=page,
+    )
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    )
+)
+async def hotpepper_get_restaurant_details(
+    shop_id: Annotated[
+        str,
+        Field(
+            description="Hot Pepper Shop ID (e.g. 'J000000000')."
+        ),
+    ],
+) -> dict:
+    """Fetch complete shop details and coupon information from Hot Pepper Gourmet API."""
+    client = HotPepperClient()
+    return await client.get_details(shop_id=shop_id)
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    )
+)
+async def unified_search_restaurants(
+    keyword: Annotated[
+        str,
+        Field(
+            description="Main search keyword, e.g. '骨付きカルビ', '焼肉', '寿司', '居酒屋' or specific dishes."
+        ),
+    ],
+    area: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Target area, prefecture, city, or station, e.g. '大阪', '鶴橋', '梅田', '新宿'."
+        ),
+    ] = None,
+    sources: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Sources to query. Defaults to ['tabelog', 'hotpepper']. Can specify either or both."
+        ),
+    ] = None,
+    private_room: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for restaurants with private rooms (個室あり)."
+        ),
+    ] = False,
+    free_drink: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for all-you-can-drink plans (飲み放題あり)."
+        ),
+    ] = False,
+    free_food: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for all-you-can-eat plans (食べ放題あり)."
+        ),
+    ] = False,
+    non_smoking: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="Filter for non-smoking dining (禁煙席・全面禁煙あり)."
+        ),
+    ] = False,
+    limit_per_source: Annotated[
+        int,
+        Field(
+            default=5,
+            ge=1,
+            le=20,
+            description="Maximum number of results to fetch per source (1-20, default 5)."
+        ),
+    ] = 5,
+) -> dict:
+    """Unified dual-source search across both Tabelog (食べログ) and Hot Pepper (ホットペッパー グルメ).
+
+    Concurrently retrieves, normalizes, and compares restaurant data from:
+    1. Tabelog: High-trust food rankings, user ratings (3.5+ / 4.0+), and in-depth gourmet reviews.
+    2. Hot Pepper: Official amenities (private rooms, nomihoudai, tabehoudai), budget tiers, coupons, and shop photos.
+    """
+    engine = UnifiedSearchEngine()
+    return await engine.search(
+        keyword=keyword,
+        area=area,
+        sources=sources,
+        private_room=private_room,
+        free_drink=free_drink,
+        free_food=free_food,
+        non_smoking=non_smoking,
+        limit_per_source=limit_per_source,
+    )
 
 # ============================================================================
 # Server Entry Points

@@ -13,6 +13,8 @@ Search by area, cuisine, date, and party size; parse structured detail pages; an
 
 ## ✨ Features
 
+- 🍱 **Dual-Source Unified Search**: Concurrently query and normalize results across Japan's top platforms: **Tabelog (食べログ)** and **Recruit Hot Pepper Gourmet (ホットペッパー グルメ)**.
+- 🎯 **Filter by Amenities**: Filter for private dining rooms (個室), all-you-can-drink (飲み放題), all-you-can-eat (食べ放題), non-smoking, and parking via Hot Pepper official API.
 - 🔍 Search restaurants by area, keyword, cuisine, date, time, and party size
 - 🍣 Filter by 29 supported Japanese cuisine categories with stable Tabelog genre codes
 - 📄 Parse restaurant detail pages into structured review, menu, and course data
@@ -280,6 +282,24 @@ Local development:
 ```
 
 ### 🛠️ MCP Tools
+
+0. 
+   Unified dual-source search across both Tabelog and Hot Pepper. Concurrently retrieves, normalizes, and compares restaurant data.
+   Parameters:
+   - : required dish, cuisine, or restaurant name
+   - : optional area or station name
+   - : optional list of sources ()
+   - : filter for private rooms (個室あり)
+   - : filter for all-you-can-drink (飲み放題あり)
+   - : filter for all-you-can-eat (食べ放題あり)
+   - : filter for non-smoking dining
+   - : 1 to 20, default 
+
+7. 
+   Direct search on Recruit Hot Pepper Gourmet API with official filters and shop coupons.
+
+8. 
+   Fetch comprehensive shop details and coupon information by Hot Pepper shop ID.
 
 1. `tabelog_search_restaurants`
    Search by area, keyword, or cuisine with structured pagination metadata.
