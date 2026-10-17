@@ -284,19 +284,20 @@ Local development:
 ### 🛠️ MCP Tools
 
 0. 
-   Unified dual-source search across both Tabelog and Hot Pepper. Concurrently retrieves, normalizes, and compares restaurant data.
+   Unified dual-source search across both Tabelog (食べログ) and Hot Pepper (ホットペッパー グルメ). Concurrently retrieves, normalizes, and compares restaurant data.
+
    Parameters:
-   - : required dish, cuisine, or restaurant name
-   - : optional area or station name
-   - : optional list of sources ()
-   - : filter for private rooms (個室あり)
-   - : filter for all-you-can-drink (飲み放題あり)
-   - : filter for all-you-can-eat (食べ放題あり)
-   - : filter for non-smoking dining
-   - : 1 to 20, default 
+   - : required dish, cuisine, or restaurant name (e.g. '骨付きカルビ', '焼肉')
+   - : optional area, prefecture, city, or station name (e.g. '大阪', '鶴橋', '新宿')
+   - : optional list of sources, defaults to 
+   - : filter for private dining rooms (個室あり)
+   - : filter for all-you-can-drink plans (飲み放題あり)
+   - : filter for all-you-can-eat plans (食べ放題あり)
+   - : filter for non-smoking dining (禁煙席あり)
+   - : maximum results per platform (1 to 20, default )
 
 7. 
-   Direct search on Recruit Hot Pepper Gourmet API with official filters and shop coupons.
+   Direct search on Recruit Hot Pepper Gourmet API with official amenities, budget ranges, and coupons.
 
 8. 
    Fetch comprehensive shop details and coupon information by Hot Pepper shop ID.
