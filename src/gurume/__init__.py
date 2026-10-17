@@ -66,3 +66,7 @@ from .hotpepper import HotPepperClient
 from .unified import UnifiedSearchEngine
 
 __all__ += ["HotPepperClient", "UnifiedSearchEngine"]
+
+from .google_places import GooglePlacesClient
+
+__all__ += ["GooglePlacesClient"]

@@ -5,6 +5,7 @@ delegating response schemas and helper logic to focused modules.
 """
 
 from __future__ import annotations
+from .google_places import GooglePlacesClient
 from .hotpepper import HotPepperClient
 from .unified import UnifiedSearchEngine
 
@@ -763,6 +764,58 @@ async def hotpepper_get_restaurant_details(
     client = HotPepperClient()
     return await client.get_details(shop_id=shop_id)
 
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=True,
+    )
+)
+async def google_places_search_restaurants(
+    query: Annotated[
+        str,
+        Field(
+            description="Restaurant search query or dish name, e.g. '烤肉', '寿司', 'ramen'."
+        ),
+    ],
+    area: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Target area, prefecture, city, or station name, e.g. '大阪', '新宿', 'Tokyo'."
+        ),
+    ] = None,
+    language: Annotated[
+        str,
+        Field(
+            default="zh-CN",
+            description="Language code for results (e.g. 'zh-CN', 'ja', 'en')."
+        ),
+    ] = "zh-CN",
+    limit: Annotated[
+        int,
+        Field(
+            default=5,
+            ge=1,
+            le=20,
+            description="Maximum number of places to return (1-20, default 5)."
+        ),
+    ] = 5,
+) -> dict:
+    """Search restaurants via Google Maps Platform Places API (New).
+
+    Best for: Global location precision, Google ratings, user reviews count, and direct Google Maps navigation links.
+    """
+    client = GooglePlacesClient()
+    return await client.search_restaurants(
+        query=query,
+        area=area,
+        language_code=language,
+        page_size=limit,
+    )
 
 @mcp.tool(
     annotations=ToolAnnotations(

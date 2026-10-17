@@ -13,7 +13,7 @@ Search by area, cuisine, date, and party size; parse structured detail pages; an
 
 ## ✨ Features
 
-- 🍱 **Dual-Source Unified Search**: Concurrently query and normalize results across Japan's top platforms: **Tabelog (食べログ)** and **Recruit Hot Pepper Gourmet (ホットペッパー グルメ)**.
+- 🍱 **Tri-Source Unified Search**: Concurrently query and normalize results across three industry-standard platforms: **Tabelog (食べログ)**, **Recruit Hot Pepper Gourmet (ホットペッパー グルメ)**, and **Google Maps Platform (Places API New)**.
 - 🎯 **Filter by Amenities**: Filter for private dining rooms (個室), all-you-can-drink (飲み放題), all-you-can-eat (食べ放題), non-smoking, and parking via Hot Pepper official API.
 - 🔍 Search restaurants by area, keyword, cuisine, date, time, and party size
 - 🍣 Filter by 29 supported Japanese cuisine categories with stable Tabelog genre codes
@@ -295,6 +295,9 @@ Local development:
    - : filter for all-you-can-eat plans (食べ放題あり)
    - : filter for non-smoking dining (禁煙席あり)
    - : maximum results per platform (1 to 20, default )
+
+6. 
+   Search restaurants globally or in Japan via Google Maps Platform Places API (New). Provides worldwide location accuracy, Google user ratings, and direct Google Maps navigation links.
 
 7. 
    Direct search on Recruit Hot Pepper Gourmet API with official amenities, budget ranges, and coupons.

@@ -3,15 +3,21 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, List, Optional
 
+from .google_places import GooglePlacesClient
 from .hotpepper import HotPepperClient
 from .search import SearchRequest, SortType
 
 
 class UnifiedSearchEngine:
-    """Unified dual-source restaurant search engine across Tabelog and Hot Pepper."""
+    """Unified tri-source restaurant search engine across Tabelog, Hot Pepper, and Google Places."""
 
-    def __init__(self, hotpepper_key: Optional[str] = None):
+    def __init__(
+        self,
+        hotpepper_key: Optional[str] = None,
+        google_key: Optional[str] = None,
+    ):
         self.hotpepper_client = HotPepperClient(api_key=hotpepper_key)
+        self.google_client = GooglePlacesClient(api_key=google_key)
 
     async def search(
         self,
@@ -24,8 +30,8 @@ class UnifiedSearchEngine:
         non_smoking: bool = False,
         limit_per_source: int = 5,
     ) -> Dict[str, Any]:
-        """Concurrently search both Tabelog and Hot Pepper, returning normalized results."""
-        target_sources = [s.lower() for s in (sources or ["tabelog", "hotpepper"])]
+        """Concurrently search across selected platforms, returning normalized results."""
+        target_sources = [s.lower() for s in (sources or ["tabelog", "hotpepper", "google"])]
         tasks = []
         task_names = []
 
@@ -49,6 +55,17 @@ class UnifiedSearchEngine:
                 )
             )
             task_names.append("hotpepper")
+
+        # 3. Google Places search
+        if "google" in target_sources or "google_places" in target_sources:
+            tasks.append(
+                self.google_client.search_restaurants(
+                    query=keyword,
+                    area=area,
+                    page_size=limit_per_source,
+                )
+            )
+            task_names.append("google")
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -77,9 +94,17 @@ class UnifiedSearchEngine:
                 }
                 unified_items.extend(hp_shops)
 
+            elif name == "google":
+                google_shops = self._normalize_google(res)
+                sources_status["google"] = {
+                    "status": "success",
+                    "count": len(google_shops),
+                }
+                unified_items.extend(google_shops)
+
         return {
             "status": "success",
-            "mode": "unified",
+            "mode": "unified_tri_source",
             "query": {
                 "keyword": keyword,
                 "area": area,
@@ -162,5 +187,39 @@ class UnifiedSearchEngine:
                 "image_url": s.get("image_url"),
                 "highlights": highlights,
                 "description": s.get("catch") or s.get("genre_catch") or "",
+            })
+        return normalized
+
+    def _normalize_google(self, google_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        normalized = []
+        for p in google_data.get("items", []):
+            highlights = ["Google Maps 认证"]
+            if p.get("rating"):
+                highlights.append(f"★ Google {p.get('rating')}")
+            if p.get("user_ratings_total"):
+                highlights.append(f"{p.get('user_ratings_total')}条全球评价")
+            if p.get("is_open_now") is True:
+                highlights.append("营业中 (Open Now)")
+            elif p.get("is_open_now") is False:
+                highlights.append("休息中 (Closed)")
+
+            price_str = "未设定"
+            if p.get("price_level"):
+                price_str = str(p.get("price_level"))
+
+            normalized.append({
+                "source": "google_places",
+                "source_title": "Google 地图 (Google Places)",
+                "name": p.get("name"),
+                "rating": p.get("rating"),
+                "review_count": p.get("user_ratings_total"),
+                "genre": p.get("primary_type") or "餐厅",
+                "address": p.get("address") or "",
+                "access": "点击链接查看 Google 路线规划",
+                "budget": price_str,
+                "url": p.get("google_maps_url") or p.get("website_url"),
+                "image_url": None,
+                "highlights": highlights,
+                "description": f"Google 评分: {p.get('rating') or '暂无'} 分，共 {p.get('user_ratings_total') or 0} 条评价",
             })
         return normalized
